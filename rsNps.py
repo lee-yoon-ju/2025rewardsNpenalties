@@ -6,24 +6,24 @@ import matplotlib.pyplot as plt
 st.set_page_config(page_title="2025년 서울고등학교 상벌점 현황", layout="wide")
 st.title("2025년 서울고등학교 상벌점 현황")
 
-# 데이터 불러오기
+# 파일 경로 (미리 업로드해둔 경우)
 file_path = "상벌점 목록.xlsx"
 df = pd.read_excel(file_path)
 
-# 날짜 처리 및 기준일 추출
+# 날짜 처리 및 기준일 표시
 df["날짜"] = pd.to_datetime(df["날짜"], errors="coerce")
 기준일 = df["날짜"].max()
 st.markdown(f"**기준일**: {기준일.strftime('%Y년 %m월 %d일')}")
 
-# 학번 → 학년, 반, 번호 분해
+# 학번 → 학년 분해
 df["학번"] = df["학번"].astype(str).str.zfill(5)
 df["학년"] = df["학번"].str[0]
 
-# 점수 정리 및 상벌점 구분
+# 점수 정리 및 구분
 df["점수"] = pd.to_numeric(df["점수"], errors="coerce")
 df["구분"] = df["점수"].apply(lambda x: "상점" if x > 0 else "벌점" if x < 0 else "기타")
 
-# 통계에 포함할 항목 키워드 목록
+# 분석에 포함할 항목 키워드
 valid_keywords = [
     "교복 전체 미착용", "교복 일부를 갖추어 입지 않은 경우", "슬리퍼 등하교", "후문하차",
     "급식 관련 기초 질서를 지키지 않은 경우", "등교시간(07시50분) 지각", "수업태도가 불량한 경우",
@@ -35,20 +35,20 @@ valid_keywords = [
     "디텐션반성문제출", "디텐션1번 참여", "디텐션2번 참여", "디텐션3번 참여"
 ]
 
-# 키워드 포함 여부로 필터링
+# 지정 키워드가 포함된 항목만 필터링
 df = df[df["상벌점 내역"].apply(lambda x: any(k in str(x) for k in valid_keywords))]
 
 # 상점만 추출
 df_상점 = df[df["구분"] == "상점"].copy()
 
-# 표준화된 사유 열 만들기
-def 표준화(text):
+# 표준화된 사유 열 생성
+def 표준화된_사유(text):
     for kw in valid_keywords:
         if kw in str(text):
             return kw
     return "기타"
 
-df_상점["사유요약"] = df_상점["상벌점 내역"].apply(표준화)
+df_상점["사유요약"] = df_상점["상벌점 내역"].apply(표준화된_사유)
 
 # 학년별 원그래프 출력
 st.subheader("학년별 상점 분포 (원그래프)")
@@ -59,6 +59,6 @@ for 학년 in sorted(df_상점["학년"].unique()):
 
     fig, ax = plt.subplots()
     ax.pie(counts, labels=counts.index, autopct="%1.1f%%", startangle=90)
-    ax.axis("equal")
     ax.set_title(f"{학년}학년 상점 분포")
+    ax.axis("equal")
     st.pyplot(fig)
