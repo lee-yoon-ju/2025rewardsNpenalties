@@ -10,7 +10,7 @@ st.title("2025년 서울고등학교 상벌점 현황")
 file_path = "상벌점 목록.xlsx"
 df = pd.read_excel(file_path)
 
-# 날짜 처리 및 기준일 추출
+# 날짜 처리 및 기준일 표시
 df["날짜"] = pd.to_datetime(df["날짜"], errors="coerce")
 기준일 = df["날짜"].max()
 st.markdown(f"**기준일**: {기준일.strftime('%Y년 %m월 %d일')}")
@@ -35,20 +35,21 @@ valid_keywords = [
     "디텐션반성문제출", "디텐션1번 참여", "디텐션2번 참여", "디텐션3번 참여"
 ]
 
-# '상벌점 내역' 포함된 열 이름 찾기 → '상벌점 목록'으로 복사
+# '상벌점 내역' 열 자동 탐색 후 '상벌점 목록'으로 사용
 target_cols = [col for col in df.columns if "상벌점 내역" in col]
 if target_cols:
     df["상벌점 목록"] = df[target_cols[0]]
 else:
     st.error("⚠️ '상벌점 내역'이 포함된 열을 찾을 수 없습니다.")
 
-# 키워드 포함 행만 필터링
+# 유효 키워드 포함 항목만 필터링
 df = df[df["상벌점 목록"].apply(lambda x: any(k in str(x) for k in valid_keywords))]
 
-# 상점만 필터링
+# 상벌점 각각 추출
 df_상점 = df[df["구분"] == "상점"].copy()
+df_벌점 = df[df["구분"] == "벌점"].copy()
 
-# 사유를 키워드 기준으로 표준화
+# 사유 요약 함수
 def 표준화된_사유(text):
     for kw in valid_keywords:
         if kw in str(text):
@@ -56,29 +57,48 @@ def 표준화된_사유(text):
     return "기타"
 
 df_상점["사유요약"] = df_상점["상벌점 목록"].apply(표준화된_사유)
+df_벌점["사유요약"] = df_벌점["상벌점 목록"].apply(표준화된_사유)
 
-# 학년 선택 드롭다운
-st.subheader("학년별 상점 분포")
-학년_옵션 = sorted(df_상점["학년"].unique())
+# 학년 선택
+st.subheader("학년별 상점 / 벌점 분포")
+학년_옵션 = sorted(df["학년"].unique())
 선택된_학년 = st.selectbox("학년을 선택하세요", options=학년_옵션)
 
-# 선택된 학년 데이터 필터링
-df_학년 = df_상점[df_상점["학년"] == 선택된_학년]
-counts = df_학년["사유요약"].value_counts()
+# 선택된 학년 필터링
+df_학년_상점 = df_상점[df_상점["학년"] == 선택된_학년]
+df_학년_벌점 = df_벌점[df_벌점["학년"] == 선택된_학년]
 
-if counts.empty:
-    st.info("선택된 학년에 대한 상점 데이터가 없습니다.")
-else:
-    # 횟수(비율) 형식으로 표시
-    def make_autopct(values):
-        def my_autopct(pct):
-            total = sum(values)
-            count = int(round(pct * total / 100.0))
-            return f"{count} ({pct:.1f}%)"
-        return my_autopct
+# 빈도 계산
+counts_상점 = df_학년_상점["사유요약"].value_counts()
+counts_벌점 = df_학년_벌점["사유요약"].value_counts()
 
-    fig, ax = plt.subplots()
-    ax.pie(counts, labels=counts.index, autopct=make_autopct(counts.values), startangle=90)
-    ax.set_title(f"{선택된_학년}학년 상점 분포")
-    ax.axis("equal")
-    st.pyplot(fig)
+# 그래프 라벨: 횟수(%) 형식
+def make_autopct(values):
+    def my_autopct(pct):
+        total = sum(values)
+        count = int(round(pct * total / 100.0))
+        return f"{count} ({pct:.1f}%)"
+    return my_autopct
+
+# 두 그래프 나란히 출력
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown(f"**🎖️ {선택된_학년}학년 상점 분포**")
+    if counts_상점.empty:
+        st.info("상점 데이터가 없습니다.")
+    else:
+        fig, ax = plt.subplots()
+        ax.pie(counts_상점, labels=counts_상점.index, autopct=make_autopct(counts_상점.values), startangle=90)
+        ax.axis("equal")
+        st.pyplot(fig)
+
+with col2:
+    st.markdown(f"**⚠️ {선택된_학년}학년 벌점 분포**")
+    if counts_벌점.empty:
+        st.info("벌점 데이터가 없습니다.")
+    else:
+        fig, ax = plt.subplots()
+        ax.pie(counts_벌점, labels=counts_벌점.index, autopct=make_autopct(counts_벌점.values), startangle=90)
+        ax.axis("equal")
+        st.pyplot(fig)
