@@ -45,6 +45,9 @@ else:
 # 🔎 키워드 필터링
 df = df[df["상벌점 목록"].apply(lambda x: any(k in str(x) for k in valid_keywords))]
 
+st.write("📋 df_상점_counts", df_상점_counts)
+st.write("컬럼:", df_상점_counts.columns.tolist())
+
 # 🧹 사유 표준화
 def 표준화된_사유(text):
     for kw in valid_keywords:
