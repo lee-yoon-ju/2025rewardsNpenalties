@@ -129,27 +129,35 @@ if not df_벌점_학년.empty:
 else:
     st.info(f"{선택학년}학년에는 벌점 데이터가 없습니다.")
 
-# ✅ 선택 학년 기준 합산점수 구간별 학생 수 분포
+# ✅ 최신 합산점수 구간별 학생 수 분포 (학년 필터링 포함)
+
 st.markdown(f"**📚 {선택학년}학년 최신 합산점수 구간별 학생 수 분포**")
 
-합산점수_col = df.columns[8]  # I열
+# 1. I열의 합산점수 열 이름 추출
+합산점수_col = df.columns[8]  # 엑셀 기준 I열
 
-# 1. 선택한 학년만 필터링
+# 2. 선택한 학년으로 필터링
 df_학년별 = df[df["학년"] == 선택학년]
 
-# 2. 학생별 가장 최근 점수 추출
+# 3. 이름 기준으로 가장 최근 점수 추출
 df_합산 = df_학년별.dropna(subset=[합산점수_col, "이름", "날짜"])
 df_합산 = df_합산.sort_values("날짜").groupby("이름", as_index=False).tail(1)
+
+# 4. 점수 정수 변환
 df_합산["점수"] = pd.to_numeric(df_합산[합산점수_col], errors="coerce").fillna(0).astype(int)
 
-# 3. 사용자 정의 점수 구간 생성 함수
+# 5. 점수 구간 정의 함수
 def make_custom_bin(score):
-    if score < 0:
-        bin_start = (score // 5) * 5 + 1
-        bin_end = bin_start + 4
-        return f"{bin_start}~{bin_end}"
-    elif score == 0:
-        return "0"
+    if score <= -20:
+        return "≤-20"
+    elif -19 <= score <= -15:
+        return "-19~-15"
+    elif -14 <= score <= -10:
+        return "-14~-10"
+    elif -9 <= score <= -5:
+        return "-9~-5"
+    elif -4 <= score <= 0:
+        return "-4~0"
     else:
         bin_start = ((score - 1) // 5) * 5 + 1
         bin_end = bin_start + 4
@@ -157,30 +165,34 @@ def make_custom_bin(score):
 
 df_합산["점수구간"] = df_합산["점수"].apply(make_custom_bin)
 
-# 4. 구간 순서 정의 (Categorical)
-고유_구간 = df_합산["점수구간"].unique()
-모든_구간 = sorted(고유_구간, key=lambda x: int(x.split("~")[0]) if "~" in x else 0)
-df_합산["점수구간"] = pd.Categorical(df_합산["점수구간"], categories=모든_구간, ordered=True)
+# 6. 점수 구간 순서 지정 (Categorical)
+구간_리스트 = ["≤-20", "-19~-15", "-14~-10", "-9~-5", "-4~0"]
+최대점수 = df_합산["점수"].max()
 
-# 5. 색상 지정 함수
+if 최대점수 > 0:
+    max_bin = ((최대점수 - 1) // 5) * 5 + 1
+    for start in range(1, max_bin + 1, 5):
+        구간_리스트.append(f"{start}~{start + 4}")
+
+df_합산["점수구간"] = pd.Categorical(df_합산["점수구간"], categories=구간_리스트, ordered=True)
+
+# 7. 색상 지정 함수
 def get_color(bin_label):
-    try:
-        start = int(bin_label.split("~")[0])
-    except:
-        return "lightgray"
-    if start >= 1:
-        return "green"
-    elif start >= -15:
+    if bin_label == "≤-20":
+        return "orange"
+    elif bin_label in ["-19~-15", "-14~-10", "-9~-5", "-4~0"]:
         return "gold"
     else:
-        return "orange"
+        return "green"
 
-# 6. 집계 + 색상
+# 8. 구간별 학생 수 집계 + 색상
 df_구간분포 = df_합산["점수구간"].value_counts().sort_index().reset_index()
 df_구간분포.columns = ["점수구간", "학생수"]
 df_구간분포["색상"] = df_구간분포["점수구간"].apply(get_color)
 
-# 7. 시각화
+# 9. 시각화
+import plotly.express as px
+
 fig_bins = px.bar(
     df_구간분포,
     x="점수구간",
