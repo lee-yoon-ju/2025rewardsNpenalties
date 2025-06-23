@@ -195,7 +195,6 @@ df_구간분포.columns = ["점수구간", "학생수"]
 df_구간분포["색상"] = df_구간분포["점수구간"].apply(get_color)
 
 # 9. 시각화
-import plotly.express as px
 
 fig_bins = px.bar(
     df_구간분포,
