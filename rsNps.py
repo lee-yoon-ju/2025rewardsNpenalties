@@ -130,28 +130,30 @@ else:
     st.info(f"{선택학년}학년에는 벌점 데이터가 없습니다.")
 
 
-# 📊 학생별 가장 최근 합산점수 분포 그래프
+# 📊 학생별 최신 합산점수 분포 (I열 기준)
+st.markdown("**📚 가장 최근 기준 합산점수 분포 (I열 기준)**")
 
-st.markdown("**📚 가장 최근 합산점수 분포**")
+# 1. 합산점수 열 추출 (I열: 0-index 기준 8번 열)
+합산점수_col = df.columns[8]  # I열
 
-# 1. 학생 이름 기준 최신 점수만 남기기
-df_학생점수 = df.dropna(subset=["점수", "이름", "날짜"])
-df_학생점수 = df_학생점수.sort_values("날짜").groupby("이름", as_index=False).tail(1)
+# 2. 이름 기준으로 가장 최신 날짜의 행만 추출
+df_합산 = df.dropna(subset=[합산점수_col, "이름", "날짜"])
+df_합산 = df_합산.sort_values("날짜").groupby("이름", as_index=False).tail(1)
 
-# 2. 점수별 학생 수 집계
-점수_분포 = df_학생점수["점수"].value_counts().sort_index()
+# 3. 점수별 학생 수 집계
+점수_분포 = df_합산[합산점수_col].value_counts().sort_index()
 df_점수분포 = pd.DataFrame({
-    "합산점수": 점수_분포.index,
+    "합산점수": 점수_분포.index.astype(int),
     "학생수": 점수_분포.values
-})
+}).sort_values("합산점수")
 
-# 3. 시각화
+# 4. 시각화
 fig_score = px.bar(
     df_점수분포,
     x="합산점수",
     y="학생수",
     labels={"합산점수": "합산점수", "학생수": "학생 수"},
-    title="학생별 최신 합산점수 분포"
+    title="🎯 최신 합산점수 기준 학생 수 분포"
 )
 fig_score.update_layout(xaxis=dict(dtick=1))
 st.plotly_chart(fig_score, use_container_width=True)
