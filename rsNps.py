@@ -128,3 +128,30 @@ if not df_벌점_학년.empty:
     st.plotly_chart(fig_bar, use_container_width=True)
 else:
     st.info(f"{선택학년}학년에는 벌점 데이터가 없습니다.")
+
+
+# 📊 학생별 가장 최근 합산점수 분포 그래프
+
+st.markdown("**📚 가장 최근 합산점수 분포**")
+
+# 1. 학생 이름 기준 최신 점수만 남기기
+df_학생점수 = df.dropna(subset=["점수", "이름", "날짜"])
+df_학생점수 = df_학생점수.sort_values("날짜").groupby("이름", as_index=False).tail(1)
+
+# 2. 점수별 학생 수 집계
+점수_분포 = df_학생점수["점수"].value_counts().sort_index()
+df_점수분포 = pd.DataFrame({
+    "합산점수": 점수_분포.index,
+    "학생수": 점수_분포.values
+})
+
+# 3. 시각화
+fig_score = px.bar(
+    df_점수분포,
+    x="합산점수",
+    y="학생수",
+    labels={"합산점수": "합산점수", "학생수": "학생 수"},
+    title="학생별 최신 합산점수 분포"
+)
+fig_score.update_layout(xaxis=dict(dtick=1))
+st.plotly_chart(fig_score, use_container_width=True)
