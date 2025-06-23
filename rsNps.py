@@ -4,7 +4,7 @@ import plotly.express as px
 
 # 페이지 설정
 st.set_page_config(page_title="2025년 서울고 상벌점 현황", layout="wide")
-st.title("2025년 서울고등학교 상벌점 현황(2025년 발생한 상점, 벌점)")
+st.title("2025년 서울고등학교 상벌점 현황")
 
 # 파일 불러오기
 file_path = "상벌점 목록.xlsx"
