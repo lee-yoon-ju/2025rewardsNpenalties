@@ -112,7 +112,7 @@ def get_week_label(dt):
     week_number = ((dt - first_day).days // 7) + 1
     return f"{year}-{month:02d}-{week_number}주"
 
-# 주별 벌점만 선그래프로 시각화
+# 주별 벌점 막대그래프
 if not df_벌점_학년.empty:
     df_벌점_학년 = df_벌점_학년.copy()
     df_벌점_학년["주차"] = df_벌점_학년["날짜"].apply(get_week_label)
@@ -122,13 +122,12 @@ if not df_벌점_학년.empty:
     all_week_labels = [get_week_label(d) for d in all_weeks]
 
     벌점_카운트 = df_벌점_학년["주차"].value_counts().reindex(all_week_labels, fill_value=0).sort_index()
+    df_벌점_주별 = pd.DataFrame({"주차": all_week_labels, "건수": 벌점_카운트.values})
 
-    df_벌점_주별 = pd.DataFrame({"주차": all_week_labels, "벌점": 벌점_카운트.values})
-
-    st.markdown(f"**📈 {선택학년}학년 주별 벌점 추이**")
-    fig_line = px.line(df_벌점_주별, x="주차", y="벌점", markers=True,
-                       labels={"주차": "주차", "벌점": "건수"})
-    fig_line.update_layout(xaxis_tickangle=-45)
-    st.plotly_chart(fig_line, use_container_width=True)
+    st.markdown(f"**📊 {선택학년}학년 주별 벌점 건수 (막대그래프)**")
+    fig_bar = px.bar(df_벌점_주별, x="주차", y="건수",
+                     labels={"주차": "주차", "건수": "벌점 건수"})
+    fig_bar.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_bar, use_container_width=True)
 else:
     st.info(f"{선택학년}학년에는 벌점 데이터가 없습니다.")
