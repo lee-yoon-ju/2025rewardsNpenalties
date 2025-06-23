@@ -129,31 +129,39 @@ if not df_벌점_학년.empty:
 else:
     st.info(f"{선택학년}학년에는 벌점 데이터가 없습니다.")
 
+# 📚 최신 합산점수 구간별 학생 수 분포
 
-# 📊 학생별 최신 합산점수 분포 (I열 기준)
-st.markdown("**📚 가장 최근 기준 합산점수 분포 (I열 기준)**")
-
-# 1. 합산점수 열 추출 (I열: 0-index 기준 8번 열)
 합산점수_col = df.columns[8]  # I열
 
-# 2. 이름 기준으로 가장 최신 날짜의 행만 추출
+# 1. 이름 기준 최신 날짜만 추출
 df_합산 = df.dropna(subset=[합산점수_col, "이름", "날짜"])
 df_합산 = df_합산.sort_values("날짜").groupby("이름", as_index=False).tail(1)
 
-# 3. 점수별 학생 수 집계
-점수_분포 = df_합산[합산점수_col].value_counts().sort_index()
-df_점수분포 = pd.DataFrame({
-    "합산점수": 점수_분포.index.astype(int),
-    "학생수": 점수_분포.values
-}).sort_values("합산점수")
+# 2. 점수 정수화
+df_합산["점수"] = pd.to_numeric(df_합산[합산점수_col], errors="coerce").fillna(0).astype(int)
 
-# 4. 시각화
-fig_score = px.bar(
-    df_점수분포,
-    x="합산점수",
+# 3. 구간 라벨링 함수
+def make_bin(score):
+    bin_start = (score - 1) // 5 * 5 + 1 if score > 0 else 0
+    bin_end = bin_start + 4
+    return f"{bin_start}-{bin_end}"
+
+df_합산["점수구간"] = df_합산["점수"].apply(make_bin)
+
+# 4. 구간별 학생 수 집계
+구간_분포 = df_합산["점수구간"].value_counts().sort_index()
+df_구간분포 = pd.DataFrame({
+    "점수구간": 구간_분포.index,
+    "학생수": 구간_분포.values
+})
+
+# 5. 시각화
+fig_bins = px.bar(
+    df_구간분포,
+    x="점수구간",
     y="학생수",
-    labels={"합산점수": "합산점수", "학생수": "학생 수"},
-    title="🎯 최신 합산점수 기준 학생 수 분포"
+    labels={"점수구간": "합산점수 구간", "학생수": "학생 수"},
+    title="🎯 최신 합산점수 구간별 학생 수 분포"
 )
-fig_score.update_layout(xaxis=dict(dtick=1))
-st.plotly_chart(fig_score, use_container_width=True)
+fig_bins.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig_bins, use_container_width=True)
