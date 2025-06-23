@@ -7,7 +7,7 @@ st.set_page_config(page_title="2025년 서울고등학교 상벌점 현황", lay
 st.title("2025년 서울고등학교 상벌점 현황")
 
 # 데이터 불러오기
-file_path = "상벌점 내역.xlsx"
+file_path = "상벌점 목록.xlsx"
 df = pd.read_excel(file_path)
 
 # 날짜 처리 및 기준일 추출
