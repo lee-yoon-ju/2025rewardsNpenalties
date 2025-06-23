@@ -13,10 +13,13 @@ df = pd.read_excel(file_path)
 # 날짜 처리
 df["날짜"] = pd.to_datetime(df["날짜"], format="%Y.%m.%d", errors="coerce")
 기준일 = df["날짜"].max()
+시작일 = df["날짜"].min()  # ✅ 이 줄을 추가하세요
+
 if pd.isna(기준일):
     st.warning("⚠️ 날짜 변환에 실패했습니다.")
 else:
     st.markdown(f"**기준일**: {기준일.strftime('%Y년 %m월 %d일')}")
+    st.markdown(f"**반영 기간**: {시작일.strftime('%Y년 %m월 %d일')} ~ {기준일.strftime('%Y년 %m월 %d일')}")  # ✅ 이 줄 추가
 
 # 학번 → 학년
 df["학번"] = df["학번"].astype(str).str.zfill(5)
