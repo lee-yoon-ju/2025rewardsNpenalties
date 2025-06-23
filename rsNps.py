@@ -129,18 +129,20 @@ if not df_벌점_학년.empty:
 else:
     st.info(f"{선택학년}학년에는 벌점 데이터가 없습니다.")
 
-# 📊 선택 학년 기준 합산점수 구간별 학생 수 분포
+# ✅ 선택 학년 기준 합산점수 구간별 학생 수 분포
 st.markdown(f"**📚 {선택학년}학년 최신 합산점수 구간별 학생 수 분포**")
 
-합산점수_col = df.columns[8]
+합산점수_col = df.columns[8]  # I열
+
+# 1. 선택한 학년만 필터링
 df_학년별 = df[df["학년"] == 선택학년]
 
-# 학생별 최근 점수 추출
+# 2. 학생별 가장 최근 점수 추출
 df_합산 = df_학년별.dropna(subset=[합산점수_col, "이름", "날짜"])
 df_합산 = df_합산.sort_values("날짜").groupby("이름", as_index=False).tail(1)
 df_합산["점수"] = pd.to_numeric(df_합산[합산점수_col], errors="coerce").fillna(0).astype(int)
 
-# 구간 라벨링 함수
+# 3. 사용자 정의 점수 구간 생성 함수
 def make_custom_bin(score):
     if score < 0:
         bin_start = (score // 5) * 5 + 1
@@ -155,20 +157,38 @@ def make_custom_bin(score):
 
 df_합산["점수구간"] = df_합산["점수"].apply(make_custom_bin)
 
-# 구간 순서 정의 (Categorical)
-모든_구간 = sorted(df_합산["점수구간"].unique(), key=lambda x: int(x.split("~")[0]) if "~" in x else 0)
+# 4. 구간 순서 정의 (Categorical)
+고유_구간 = df_합산["점수구간"].unique()
+모든_구간 = sorted(고유_구간, key=lambda x: int(x.split("~")[0]) if "~" in x else 0)
 df_합산["점수구간"] = pd.Categorical(df_합산["점수구간"], categories=모든_구간, ordered=True)
 
-# 집계 및 시각화
+# 5. 색상 지정 함수
+def get_color(bin_label):
+    try:
+        start = int(bin_label.split("~")[0])
+    except:
+        return "lightgray"
+    if start >= 1:
+        return "green"
+    elif start >= -15:
+        return "gold"
+    else:
+        return "orange"
+
+# 6. 집계 + 색상
 df_구간분포 = df_합산["점수구간"].value_counts().sort_index().reset_index()
 df_구간분포.columns = ["점수구간", "학생수"]
+df_구간분포["색상"] = df_구간분포["점수구간"].apply(get_color)
 
+# 7. 시각화
 fig_bins = px.bar(
     df_구간분포,
     x="점수구간",
     y="학생수",
+    color="색상",
+    color_discrete_map="identity",
     labels={"점수구간": "합산점수 구간", "학생수": "학생 수"},
     title=f"{선택학년}학년 최신 합산점수 구간별 학생 수"
 )
-fig_bins.update_layout(xaxis_tickangle=-45)
+fig_bins.update_layout(xaxis_tickangle=-45, showlegend=False)
 st.plotly_chart(fig_bins, use_container_width=True)
