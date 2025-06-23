@@ -134,7 +134,7 @@ if not df_벌점_학년.empty:
     df_벌점_학년 = df_벌점_학년[df_벌점_학년["요일"].isin(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])]
     요일순서 = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
         요일별_벌점 = df_벌점_학년["요일"].value_counts().reindex(요일순서, fill_value=0)
-    최다요일 = 요일별_벌점.idxmax()
+        최다요일 = 요일별_벌점.idxmax()
 
     df_요일 = pd.DataFrame({
         "요일": 요일별_벌점.index,
