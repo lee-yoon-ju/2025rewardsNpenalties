@@ -36,7 +36,7 @@ df["요일"] = df[날짜열].dt.day_name()
 
 # --- Streamlit UI
 st.set_page_config("상벌점 분석 대시보드", layout="wide")
-st.title("📊 상벌점 분석 대시보드")
+st.title("📊 2025년 서울고 벌점 통계")
 
 # 🔎 학년 선택
 학년옵션 = sorted(df["학년"].unique())
