@@ -38,6 +38,14 @@ df["요일"] = df[날짜열].dt.day_name()
 st.set_page_config("상벌점 분석 대시보드", layout="wide")
 st.title("📊 2025년 서울고 벌점 통계")
 
+# 날짜 범위 계산
+시작일 = df[날짜열].min()
+종료일 = df[날짜열].max()
+
+# 날짜 문자열 포맷팅
+기간문구 = f"반영기간 : {시작일:%Y년 %m월 %d일} ~ {종료일:%Y년 %m월 %d일}"
+st.markdown(f"**{기간문구}**")
+
 # 🔎 학년 선택
 학년옵션 = sorted(df["학년"].unique())
 선택학년 = st.selectbox("분석할 학년 선택", options=학년옵션)
